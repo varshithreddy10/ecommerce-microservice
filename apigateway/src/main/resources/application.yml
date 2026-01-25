@@ -1,0 +1,74 @@
+
+
+
+spring:
+  application:
+    name: apigateway
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+
+            - id: auth-service
+              uri: lb://AUTHUSER
+              predicates:
+                - Path=/api/auth/**
+
+            - id: order-service
+              uri: lb://orderapi
+              predicates:
+                - Path=/api/orders/**
+              filters:
+                - name: AuthenticationFilter
+
+
+            - id: customer-service
+              uri: lb://customerapi
+              predicates:
+                - Path=/api/customer/**
+              filters:
+                - name: AuthenticationFilter
+
+
+            - id: address-service
+              uri: lb://customerapi
+              predicates:
+                - Path=/api/address/**
+              filters:
+                - name: AuthenticationFilter
+
+
+            - id: cart-service
+              uri: lb://cartapi
+              predicates:
+                - Path=/api/carts/**
+              filters:
+                - name: AuthenticationFilter
+
+
+            - id: product-service
+              uri: lb://PRODUCTAPI
+              predicates:
+                - Path=/api/products/**
+              filters:
+                - name: AuthenticationFilter
+
+
+            - id: admin-service
+              uri: lb://adminapi
+              predicates:
+                - Path=/api/admin/**
+              filters:
+                - name: AuthenticationFilter
+
+server:
+  port: 8080
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eurekaserver:8761/eureka
+
+

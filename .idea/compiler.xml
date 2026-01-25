@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="eurekaserver" />
+      </profile>
+      <profile name="Annotation profile for api" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="false">
+          <entry name="$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.42/lombok-1.18.42.jar" />
+        </processorPath>
+        <module name="apigateway" />
+        <module name="cartapi" />
+        <module name="adminapi" />
+        <module name="api" />
+        <module name="customerapi" />
+        <module name="orderapi" />
+        <module name="authuser" />
+      </profile>
+    </annotationProcessing>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="adminapi" options="-parameters" />
+      <module name="api" options="-parameters" />
+      <module name="apigateway" options="-parameters" />
+      <module name="authuser" options="-parameters" />
+      <module name="cartapi" options="-parameters" />
+      <module name="customerapi" options="-parameters" />
+      <module name="eurekaserver" options="-parameters" />
+      <module name="orderapi" options="-parameters" />
+    </option>
+  </component>
+</project>

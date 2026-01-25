@@ -1,0 +1,139 @@
+version: "3.8"
+
+services:
+
+  # ---------------- EUREKA SERVER ----------------
+  eurekaserver:
+    build: ./eurekaserver
+    image: eurekaserver
+    container_name: eurekaserver
+    ports:
+      - "8761:8761"
+    networks:
+      - ecommerce-network
+
+  # ---------------- MICROSERVICE DB ----------------
+  microservice-db:
+    image: postgres:15
+    container_name: microservice-db
+    environment:
+      POSTGRES_DB: microservicedb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - microservice-db-data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+
+  # ---------------- SECURITY DB ----------------
+
+
+  security-db:
+    image: postgres:15
+    container_name: security-db
+    environment:
+      POSTGRES_DB: securitydb
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    volumes:
+      - security-db-data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+
+  # ---------------- AUTH USER SERVICE ----------------
+  authuser:
+    build: ./authuser
+    image: authuser
+    container_name: authuser
+    depends_on:
+      - eurekaserver
+      - security-db
+    networks:
+      - ecommerce-network
+
+
+  # ---------------- ADMIN SERVICE ----------------
+  adminapi:
+    build: ./adminapi
+    image: adminapi
+    container_name: adminapi
+    depends_on:
+      - eurekaserver
+      - microservice-db
+    networks:
+      - ecommerce-network
+
+
+  # ---------------- CUSTOMER SERVICE ----------------
+  customerapi:
+    build: ./customerapi
+    image: customerapi
+    container_name: customerapi
+    depends_on:
+      - eurekaserver
+      - microservice-db
+    networks:
+      - ecommerce-network
+
+
+  # ---------------- PRODUCT SERVICE ----------------
+  productapi:
+    build: ./productapi
+    image: productapi
+    container_name: productapi
+    depends_on:
+      - eurekaserver
+      - microservice-db
+    networks:
+      - ecommerce-network
+
+
+  # ---------------- CART SERVICE ----------------
+  cartapi:
+    build: ./cartapi
+    image: cartapi
+    container_name: cartapi
+    depends_on:
+      - eurekaserver
+      - microservice-db
+    networks:
+      - ecommerce-network
+
+
+  # ---------------- ORDER SERVICE ----------------
+  orderapi:
+    build: ./orderapi
+    image: orderapi
+    container_name: orderapi
+    depends_on:
+      - eurekaserver
+      - microservice-db
+    networks:
+      - ecommerce-network
+
+
+  # ---------------- API GATEWAY ----------------
+  apigateway:
+    build: ./apigateway
+    image: apigateway
+    container_name: apigateway
+    depends_on:
+      - eurekaserver
+      - authuser
+      - adminapi
+      - customerapi
+      - productapi
+      - cartapi
+      - orderapi
+    ports:
+      - "8080:8080"
+    networks:
+      - ecommerce-network
+
+
+volumes:
+  microservice-db-data:
+  security-db-data:
+
+networks:
+  ecommerce-network:
