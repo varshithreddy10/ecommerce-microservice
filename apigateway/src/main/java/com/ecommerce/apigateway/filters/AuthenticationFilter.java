@@ -16,7 +16,7 @@ import java.util.List;
 @Component
 public class AuthenticationFilter extends AbstractGatewayFilterFactory<AuthenticationFilter.Config>
 {
-
+// .
     private final JwtService jwtService;
 
     public AuthenticationFilter(JwtService jwtService)
