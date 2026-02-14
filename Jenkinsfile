@@ -19,21 +19,35 @@ pipeline {
         /* ================= CHECKOUT ================= */
 
         stage('Checkout Code') {
-            agent any
             steps {
                 checkout scm
+            }
+        }
+
+        /* ================= DOCKER LOGIN (ONCE) ================= */
+
+        stage('Docker Hub Login') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh """
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    """
+                }
             }
         }
 
         /* ================= ADMIN API ================= */
 
         stage('Build & Push Admin API') {
-            agent any
             when {
                 beforeAgent true
                 anyOf {
                     changeset "**/adminapi/**"
-                    expression { currentBuild.previousBuild == null }
+                    expression { currentBuild.number == 1 }
                 }
             }
             environment {
@@ -44,31 +58,21 @@ pipeline {
                     sh 'mvn clean package -DskipTests'
                 }
 
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} adminapi"
-
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh """
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                        docker logout
-                    """
-                }
+                sh """
+                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} adminapi
+                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                """
             }
         }
 
         /* ================= API GATEWAY ================= */
 
         stage('Build & Push API Gateway') {
-            agent any
             when {
                 beforeAgent true
                 anyOf {
                     changeset "**/apigateway/**"
-                    expression { currentBuild.previousBuild == null }
+                    expression { currentBuild.number == 1 }
                 }
             }
             environment {
@@ -79,31 +83,21 @@ pipeline {
                     sh 'mvn clean package -DskipTests'
                 }
 
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} apigateway"
-
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh """
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                        docker logout
-                    """
-                }
+                sh """
+                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} apigateway
+                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                """
             }
         }
 
         /* ================= AUTH USER ================= */
 
         stage('Build & Push Auth User API') {
-            agent any
             when {
                 beforeAgent true
                 anyOf {
                     changeset "**/authuser/**"
-                    expression { currentBuild.previousBuild == null }
+                    expression { currentBuild.number == 1 }
                 }
             }
             environment {
@@ -114,31 +108,21 @@ pipeline {
                     sh 'mvn clean package -DskipTests'
                 }
 
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} authuser"
-
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh """
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                        docker logout
-                    """
-                }
+                sh """
+                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} authuser
+                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                """
             }
         }
 
         /* ================= CART API ================= */
 
         stage('Build & Push Cart API') {
-            agent any
             when {
                 beforeAgent true
                 anyOf {
                     changeset "**/cartapi/**"
-                    expression { currentBuild.previousBuild == null }
+                    expression { currentBuild.number == 1 }
                 }
             }
             environment {
@@ -149,31 +133,21 @@ pipeline {
                     sh 'mvn clean package -DskipTests'
                 }
 
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} cartapi"
-
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh """
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                        docker logout
-                    """
-                }
+                sh """
+                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} cartapi
+                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                """
             }
         }
 
         /* ================= CUSTOMER API ================= */
 
         stage('Build & Push Customer API') {
-            agent any
             when {
                 beforeAgent true
                 anyOf {
                     changeset "**/customerapi/**"
-                    expression { currentBuild.previousBuild == null }
+                    expression { currentBuild.number == 1 }
                 }
             }
             environment {
@@ -184,31 +158,21 @@ pipeline {
                     sh 'mvn clean package -DskipTests'
                 }
 
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} customerapi"
-
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh """
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                        docker logout
-                    """
-                }
+                sh """
+                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} customerapi
+                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                """
             }
         }
 
         /* ================= EUREKA SERVER ================= */
 
         stage('Build & Push Eureka Server') {
-            agent any
             when {
                 beforeAgent true
                 anyOf {
                     changeset "**/eurekaserver/**"
-                    expression { currentBuild.previousBuild == null }
+                    expression { currentBuild.number == 1 }
                 }
             }
             environment {
@@ -219,31 +183,21 @@ pipeline {
                     sh 'mvn clean package -DskipTests'
                 }
 
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} eurekaserver"
-
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh """
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                        docker logout
-                    """
-                }
+                sh """
+                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} eurekaserver
+                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                """
             }
         }
 
         /* ================= ORDER API ================= */
 
         stage('Build & Push Order API') {
-            agent any
             when {
                 beforeAgent true
                 anyOf {
                     changeset "**/orderapi/**"
-                    expression { currentBuild.previousBuild == null }
+                    expression { currentBuild.number == 1 }
                 }
             }
             environment {
@@ -254,31 +208,21 @@ pipeline {
                     sh 'mvn clean package -DskipTests'
                 }
 
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} orderapi"
-
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh """
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                        docker logout
-                    """
-                }
+                sh """
+                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} orderapi
+                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                """
             }
         }
 
         /* ================= PRODUCT API ================= */
 
         stage('Build & Push Product API') {
-            agent any
             when {
                 beforeAgent true
                 anyOf {
                     changeset "**/productapi/**"
-                    expression { currentBuild.previousBuild == null }
+                    expression { currentBuild.number == 1 }
                 }
             }
             environment {
@@ -289,24 +233,18 @@ pipeline {
                     sh 'mvn clean package -DskipTests'
                 }
 
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} productapi"
-
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh """
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                        docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                        docker logout
-                    """
-                }
+                sh """
+                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} productapi
+                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                """
             }
         }
     }
 
     post {
+        always {
+            sh 'docker logout || true'
+        }
         success {
             echo "All changed services pushed successfully 🚀"
         }
