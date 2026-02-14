@@ -36,6 +36,7 @@ public class ProductController
     //@PreAuthorize("hasRole('ADMIN') and hasAuthority('PRODUCT_VIEW')")
     public ResponseEntity<List<ProductDto>> getAllProducts()
     {
+        // .
         log.info("NATALIE control entered the getAllProducts()");
 
 
