@@ -24,9 +24,23 @@ pipeline {
             }
         }
 
-        /* ================= DOCKER LOGIN (ONCE) ================= */
+        /* ================= GENERATE VERSION ================= */
 
-        stage('Docker Hub Login') {
+        stage('Generate Commit Version') {
+            steps {
+                script {
+                    VERSION = sh(
+                        script: "git rev-parse --short HEAD",
+                        returnStdout: true
+                    ).trim()
+                    echo "Using Version: ${VERSION}"
+                }
+            }
+        }
+
+        /* ================= DOCKER LOGIN ================= */
+
+        stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
@@ -40,203 +54,54 @@ pipeline {
             }
         }
 
-        /* ================= ADMIN API ================= */
+        /* ================= BUILD FUNCTION ================= */
 
-        stage('Build & Push Admin API') {
-            when {
-                beforeAgent true
-                anyOf {
-                    changeset "**/adminapi/**"
-                    expression { currentBuild.number == 1 }
-                }
-            }
-            environment {
-                IMAGE_NAME = "varshithreddy144/ecom-adminapi"
-            }
+        stage('Build & Deploy Changed Services') {
             steps {
-                dir('adminapi') {
-                    sh 'mvn clean package -DskipTests'
+                script {
+
+                    def services = [
+                        [name: "adminapi",      image: "ecom-adminapi"],
+                        [name: "apigateway",    image: "ecom-apigateway"],
+                        [name: "authuser",      image: "ecom-authuserapi"],
+                        [name: "cartapi",       image: "ecom-cartapi"],
+                        [name: "customerapi",   image: "ecom-customerapi"],
+                        [name: "eurekaserver",  image: "ecom-eurekaserver"],
+                        [name: "orderapi",      image: "ecom-orderapi"],
+                        [name: "productapi",    image: "ecom-productapi"]
+                    ]
+
+                    for (svc in services) {
+
+                        if (currentBuild.changeSets.any { changeSet ->
+                            changeSet.items.any { item ->
+                                item.affectedFiles.any { file ->
+                                    file.path.startsWith("${svc.name}/")
+                                }
+                            }
+                        }) {
+
+                            echo "Building ${svc.name}..."
+
+                            dir("${svc.name}") {
+                                sh 'mvn clean package -DskipTests'
+                                sh """
+                                    docker build -t ${DOCKERHUB_USERNAME}/${svc.image}:${VERSION} .
+                                    docker push ${DOCKERHUB_USERNAME}/${svc.image}:${VERSION}
+                                    docker tag ${DOCKERHUB_USERNAME}/${svc.image}:${VERSION} ${DOCKERHUB_USERNAME}/${svc.image}:latest
+                                    docker push ${DOCKERHUB_USERNAME}/${svc.image}:latest
+                                """
+                            }
+
+                            echo "Deploying ${svc.name}..."
+
+                            sh """
+                                docker compose pull ${svc.name}
+                                docker compose up -d ${svc.name}
+                            """
+                        }
+                    }
                 }
-
-                sh """
-                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} adminapi
-                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                """
-            }
-        }
-
-        /* ================= API GATEWAY ================= */
-
-        stage('Build & Push API Gateway') {
-            when {
-                beforeAgent true
-                anyOf {
-                    changeset "**/apigateway/**"
-                    expression { currentBuild.number == 1 }
-                }
-            }
-            environment {
-                IMAGE_NAME = "varshithreddy144/ecom-apigateway"
-            }
-            steps {
-                dir('apigateway') {
-                    sh 'mvn clean package -DskipTests'
-                }
-
-                sh """
-                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} apigateway
-                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                """
-            }
-        }
-
-        /* ================= AUTH USER ================= */
-
-        stage('Build & Push Auth User API') {
-            when {
-                beforeAgent true
-                anyOf {
-                    changeset "**/authuser/**"
-                    expression { currentBuild.number == 1 }
-                }
-            }
-            environment {
-                IMAGE_NAME = "varshithreddy144/ecom-authuserapi"
-            }
-            steps {
-                dir('authuser') {
-                    sh 'mvn clean package -DskipTests'
-                }
-
-                sh """
-                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} authuser
-                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                """
-            }
-        }
-
-        /* ================= CART API ================= */
-
-        stage('Build & Push Cart API') {
-            when {
-                beforeAgent true
-                anyOf {
-                    changeset "**/cartapi/**"
-                    expression { currentBuild.number == 1 }
-                }
-            }
-            environment {
-                IMAGE_NAME = "varshithreddy144/ecom-cartapi"
-            }
-            steps {
-                dir('cartapi') {
-                    sh 'mvn clean package -DskipTests'
-                }
-
-                sh """
-                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} cartapi
-                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                """
-            }
-        }
-
-        /* ================= CUSTOMER API ================= */
-
-        stage('Build & Push Customer API') {
-            when {
-                beforeAgent true
-                anyOf {
-                    changeset "**/customerapi/**"
-                    expression { currentBuild.number == 1 }
-                }
-            }
-            environment {
-                IMAGE_NAME = "varshithreddy144/ecom-customerapi"
-            }
-            steps {
-                dir('customerapi') {
-                    sh 'mvn clean package -DskipTests'
-                }
-
-                sh """
-                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} customerapi
-                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                """
-            }
-        }
-
-        /* ================= EUREKA SERVER ================= */
-
-        stage('Build & Push Eureka Server') {
-            when {
-                beforeAgent true
-                anyOf {
-                    changeset "**/eurekaserver/**"
-                    expression { currentBuild.number == 1 }
-                }
-            }
-            environment {
-                IMAGE_NAME = "varshithreddy144/ecom-eurekaserver"
-            }
-            steps {
-                dir('eurekaserver') {
-                    sh 'mvn clean package -DskipTests'
-                }
-
-                sh """
-                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} eurekaserver
-                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                """
-            }
-        }
-
-        /* ================= ORDER API ================= */
-
-        stage('Build & Push Order API') {
-            when {
-                beforeAgent true
-                anyOf {
-                    changeset "**/orderapi/**"
-                    expression { currentBuild.number == 1 }
-                }
-            }
-            environment {
-                IMAGE_NAME = "varshithreddy144/ecom-orderapi"
-            }
-            steps {
-                dir('orderapi') {
-                    sh 'mvn clean package -DskipTests'
-                }
-
-                sh """
-                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} orderapi
-                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                """
-            }
-        }
-
-        /* ================= PRODUCT API ================= */
-
-        stage('Build & Push Product API') {
-            when {
-                beforeAgent true
-                anyOf {
-                    changeset "**/productapi/**"
-                    expression { currentBuild.number == 1 }
-                }
-            }
-            environment {
-                IMAGE_NAME = "varshithreddy144/ecom-productapi"
-            }
-            steps {
-                dir('productapi') {
-                    sh 'mvn clean package -DskipTests'
-                }
-
-                sh """
-                    docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} productapi
-                    docker push ${IMAGE_NAME}:${BUILD_NUMBER}
-                """
             }
         }
     }
@@ -246,10 +111,11 @@ pipeline {
             sh 'docker logout || true'
         }
         success {
-            echo "All changed services pushed successfully 🚀"
+            echo "Changed services built and deployed successfully 🚀"
         }
         failure {
             echo "Pipeline failed ❌"
         }
     }
 }
+
