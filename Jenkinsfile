@@ -12,6 +12,7 @@ pipeline {
 
     environment {
         DOCKERHUB_USERNAME = "varshithreddy144"
+        DEPLOY_DIR = "/home/ubuntu/ecommerce-project"
     }
 
     stages {
@@ -29,10 +30,12 @@ pipeline {
         stage('Generate Commit Version') {
             steps {
                 script {
-                    VERSION = sh(
+                    def VERSION = sh(
                         script: "git rev-parse --short HEAD",
                         returnStdout: true
                     ).trim()
+
+                    env.VERSION = VERSION
                     echo "Using Version: ${VERSION}"
                 }
             }
@@ -47,14 +50,14 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh """
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                    """
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                    '''
                 }
             }
         }
 
-        /* ================= BUILD FUNCTION ================= */
+        /* ================= BUILD & DEPLOY ================= */
 
         stage('Build & Deploy Changed Services') {
             steps {
@@ -73,22 +76,27 @@ pipeline {
 
                     for (svc in services) {
 
-                        if (currentBuild.changeSets.any { changeSet ->
+                        def serviceChanged = currentBuild.changeSets.any { changeSet ->
                             changeSet.items.any { item ->
                                 item.affectedFiles.any { file ->
                                     file.path.startsWith("${svc.name}/")
                                 }
                             }
-                        }) {
+                        }
+
+                        if (serviceChanged) {
 
                             echo "Building ${svc.name}..."
 
                             dir("${svc.name}") {
+
                                 sh 'mvn clean package -DskipTests'
+
                                 sh """
-                                    docker build -t ${DOCKERHUB_USERNAME}/${svc.image}:${VERSION} .
-                                    docker push ${DOCKERHUB_USERNAME}/${svc.image}:${VERSION}
-                                    docker tag ${DOCKERHUB_USERNAME}/${svc.image}:${VERSION} ${DOCKERHUB_USERNAME}/${svc.image}:latest
+                                    docker build -t ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION} .
+                                    docker push ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION}
+
+                                    docker tag ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION} ${DOCKERHUB_USERNAME}/${svc.image}:latest
                                     docker push ${DOCKERHUB_USERNAME}/${svc.image}:latest
                                 """
                             }
@@ -96,6 +104,7 @@ pipeline {
                             echo "Deploying ${svc.name}..."
 
                             sh """
+                                cd ${DEPLOY_DIR}
                                 docker compose pull ${svc.name}
                                 docker compose up -d ${svc.name}
                             """
@@ -118,4 +127,3 @@ pipeline {
         }
     }
 }
-
