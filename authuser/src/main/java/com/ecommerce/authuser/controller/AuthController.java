@@ -55,7 +55,7 @@ public class AuthController
     @GetMapping("/test")
     public ResponseEntity<String> test()
     {
-        String message = " prabhas is doing movie with movie salaar 2 ";
+        String message = " yash is acting as raavan in ramayana ";
 
         return new ResponseEntity<>(message , HttpStatus.OK);
     }
