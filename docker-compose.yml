@@ -1,11 +1,8 @@
-version: "3.8"
-
 services:
 
   # ---------------- EUREKA SERVER ----------------
   eurekaserver:
-    build: ./eurekaserver
-    image: eurekaserver
+    image: varshithreddy144/ecom-eurekaserver:${VERSION}
     container_name: eurekaserver
     ports:
       - "8761:8761"
@@ -26,8 +23,6 @@ services:
       - ecommerce-network
 
   # ---------------- SECURITY DB ----------------
-
-
   security-db:
     image: postgres:15
     container_name: security-db
@@ -42,8 +37,7 @@ services:
 
   # ---------------- AUTH USER SERVICE ----------------
   authuser:
-    build: ./authuser
-    image: authuser
+    image: varshithreddy144/ecom-authuserapi:${VERSION}
     container_name: authuser
     depends_on:
       - eurekaserver
@@ -51,11 +45,9 @@ services:
     networks:
       - ecommerce-network
 
-
   # ---------------- ADMIN SERVICE ----------------
   adminapi:
-    build: ./adminapi
-    image: adminapi
+    image: varshithreddy144/ecom-adminapi:${VERSION}
     container_name: adminapi
     depends_on:
       - eurekaserver
@@ -63,11 +55,9 @@ services:
     networks:
       - ecommerce-network
 
-
   # ---------------- CUSTOMER SERVICE ----------------
   customerapi:
-    build: ./customerapi
-    image: customerapi
+    image: varshithreddy144/ecom-customerapi:${VERSION}
     container_name: customerapi
     depends_on:
       - eurekaserver
@@ -75,11 +65,9 @@ services:
     networks:
       - ecommerce-network
 
-
   # ---------------- PRODUCT SERVICE ----------------
   productapi:
-    build: ./productapi
-    image: productapi
+    image: varshithreddy144/ecom-productapi:${VERSION}
     container_name: productapi
     depends_on:
       - eurekaserver
@@ -87,11 +75,9 @@ services:
     networks:
       - ecommerce-network
 
-
   # ---------------- CART SERVICE ----------------
   cartapi:
-    build: ./cartapi
-    image: cartapi
+    image: varshithreddy144/ecom-cartapi:${VERSION}
     container_name: cartapi
     depends_on:
       - eurekaserver
@@ -99,11 +85,9 @@ services:
     networks:
       - ecommerce-network
 
-
   # ---------------- ORDER SERVICE ----------------
   orderapi:
-    build: ./orderapi
-    image: orderapi
+    image: varshithreddy144/ecom-orderapi:${VERSION}
     container_name: orderapi
     depends_on:
       - eurekaserver
@@ -111,11 +95,9 @@ services:
     networks:
       - ecommerce-network
 
-
   # ---------------- API GATEWAY ----------------
   apigateway:
-    build: ./apigateway
-    image: apigateway
+    image: varshithreddy144/ecom-apigateway:${VERSION}
     container_name: apigateway
     depends_on:
       - eurekaserver
@@ -130,10 +112,10 @@ services:
     networks:
       - ecommerce-network
 
-
 volumes:
   microservice-db-data:
   security-db-data:
 
 networks:
   ecommerce-network:
+
