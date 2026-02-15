@@ -33,7 +33,7 @@ public class ProductController
     private ModelMapper modelmapper;
 
     @GetMapping("/get/allproducts")
-    //@PreAuthorize("hasRole('ADMIN') and hasAuthority('PRODUCT_VIEW')") . .
+    //@PreAuthorize("hasRole('ADMIN') and hasAuthority('PRODUCT_VIEW')") . . .
     public ResponseEntity<List<ProductDto>> getAllProducts()
     {
         // . hello i am varshith this is test
