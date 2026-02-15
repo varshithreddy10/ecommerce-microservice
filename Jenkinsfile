@@ -77,7 +77,7 @@ pipeline {
                             }
                         }
 
-                        if (serviceChanged || currentBuild.number == 1) {
+                        if (serviceChanged || currentBuild.number == 31) {
 
                             anyServiceBuilt = true
                             echo "Building ${svc.name}..."
