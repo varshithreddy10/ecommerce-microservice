@@ -55,7 +55,7 @@ public class AuthController
     @GetMapping("/test")
     public ResponseEntity<String> test()
     {
-        String message = "varshith docker container has successfully started authuser";
+        String message = "hello i am varshith now i am testing the ci/cd using the jenkins, aws ec2, docker";
 
         return new ResponseEntity<>(message , HttpStatus.OK);
     }
