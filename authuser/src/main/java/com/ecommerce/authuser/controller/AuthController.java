@@ -55,7 +55,7 @@ public class AuthController
     @GetMapping("/test")
     public ResponseEntity<String> test()
     {
-        String message = "hello i am varshith now i am testing the ci/cd using the jenkins, aws ec2, docker";
+        String message = "hello i am varshith now i am testing the ci/cd using the jenkins, aws ec2, docker for the second time";
 
         return new ResponseEntity<>(message , HttpStatus.OK);
     }
