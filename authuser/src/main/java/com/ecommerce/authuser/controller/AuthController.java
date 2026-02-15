@@ -55,7 +55,7 @@ public class AuthController
     @GetMapping("/test")
     public ResponseEntity<String> test()
     {
-        String message = "hello i am varshith this is my 10 build using ci/cd jenkins rajinikanth";
+        String message = "hello i am varshith this is my 10 build using ci/cd jenkins mahesh babu";
 
         return new ResponseEntity<>(message , HttpStatus.OK);
     }
