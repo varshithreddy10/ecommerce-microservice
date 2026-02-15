@@ -50,7 +50,7 @@ pipeline {
             }
         }
 
-        stage('Build & Deploy Changed Services') {
+        stage('Build & Deploy Services') {
             steps {
                 script {
 
@@ -65,6 +65,7 @@ pipeline {
                         [name: "productapi",    image: "ecom-productapi"]
                     ]
 
+                    def isFirstBuild = (currentBuild.number == 37)
                     def anyServiceBuilt = false
 
                     for (svc in services) {
@@ -77,7 +78,7 @@ pipeline {
                             }
                         }
 
-                        if (serviceChanged || currentBuild.changeSets.isEmpty()) {
+                        if (serviceChanged || isFirstBuild) {
 
                             anyServiceBuilt = true
                             echo "Building ${svc.name}..."
