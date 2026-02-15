@@ -2,7 +2,7 @@ services:
 
   # ---------------- EUREKA SERVER ----------------
   eurekaserver:
-    image: varshithreddy144/ecom-eurekaserver:${VERSION}
+    image: varshithreddy144/ecom-eurekaserver:latest
     container_name: eurekaserver
     ports:
       - "8761:8761"
@@ -37,7 +37,7 @@ services:
 
   # ---------------- AUTH USER SERVICE ----------------
   authuser:
-    image: varshithreddy144/ecom-authuserapi:${VERSION}
+    image: varshithreddy144/ecom-authuserapi:latest
     container_name: authuser
     depends_on:
       - eurekaserver
@@ -47,7 +47,7 @@ services:
 
   # ---------------- ADMIN SERVICE ----------------
   adminapi:
-    image: varshithreddy144/ecom-adminapi:${VERSION}
+    image: varshithreddy144/ecom-adminapi:latest
     container_name: adminapi
     depends_on:
       - eurekaserver
@@ -57,7 +57,7 @@ services:
 
   # ---------------- CUSTOMER SERVICE ----------------
   customerapi:
-    image: varshithreddy144/ecom-customerapi:${VERSION}
+    image: varshithreddy144/ecom-customerapi:latest
     container_name: customerapi
     depends_on:
       - eurekaserver
@@ -67,7 +67,7 @@ services:
 
   # ---------------- PRODUCT SERVICE ----------------
   productapi:
-    image: varshithreddy144/ecom-productapi:${VERSION}
+    image: varshithreddy144/ecom-productapi:latest
     container_name: productapi
     depends_on:
       - eurekaserver
@@ -77,7 +77,7 @@ services:
 
   # ---------------- CART SERVICE ----------------
   cartapi:
-    image: varshithreddy144/ecom-cartapi:${VERSION}
+    image: varshithreddy144/ecom-cartapi:latest
     container_name: cartapi
     depends_on:
       - eurekaserver
@@ -87,7 +87,7 @@ services:
 
   # ---------------- ORDER SERVICE ----------------
   orderapi:
-    image: varshithreddy144/ecom-orderapi:${VERSION}
+    image: varshithreddy144/ecom-orderapi:latest
     container_name: orderapi
     depends_on:
       - eurekaserver
@@ -97,7 +97,7 @@ services:
 
   # ---------------- API GATEWAY ----------------
   apigateway:
-    image: varshithreddy144/ecom-apigateway:${VERSION}
+    image: varshithreddy144/ecom-apigateway:latest
     container_name: apigateway
     depends_on:
       - eurekaserver
@@ -108,7 +108,7 @@ services:
       - cartapi
       - orderapi
     ports:
-      - "8080:8080"
+      - "8081:8080"   # 👈 changed because Jenkins uses 8080
     networks:
       - ecommerce-network
 
@@ -118,4 +118,3 @@ volumes:
 
 networks:
   ecommerce-network:
-
