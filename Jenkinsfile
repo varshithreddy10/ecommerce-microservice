@@ -12,12 +12,10 @@ pipeline {
 
     environment {
         DOCKERHUB_USERNAME = "varshithreddy144"
-        DEPLOY_DIR = "/home/ubuntu/ecommerce-project"
+        DEPLOY_DIR = "/opt/ecommerce-project"
     }
 
     stages {
-
-        /* ================= CHECKOUT ================= */
 
         stage('Checkout Code') {
             steps {
@@ -25,23 +23,18 @@ pipeline {
             }
         }
 
-        /* ================= GENERATE VERSION ================= */
-
         stage('Generate Commit Version') {
             steps {
                 script {
-                    def VERSION = sh(
+                    env.VERSION = sh(
                         script: "git rev-parse --short HEAD",
                         returnStdout: true
                     ).trim()
 
-                    env.VERSION = VERSION
-                    echo "Using Version: ${VERSION}"
+                    echo "Using Version: ${env.VERSION}"
                 }
             }
         }
-
-        /* ================= DOCKER LOGIN ================= */
 
         stage('Docker Login') {
             steps {
@@ -56,8 +49,6 @@ pipeline {
                 }
             }
         }
-
-        /* ================= BUILD & DEPLOY ================= */
 
         stage('Build & Deploy Changed Services') {
             steps {
@@ -74,6 +65,8 @@ pipeline {
                         [name: "productapi",    image: "ecom-productapi"]
                     ]
 
+                    def anyServiceBuilt = false
+
                     for (svc in services) {
 
                         def serviceChanged = currentBuild.changeSets.any { changeSet ->
@@ -84,8 +77,9 @@ pipeline {
                             }
                         }
 
-                        if (serviceChanged) {
+                        if (serviceChanged || currentBuild.number == 1) {
 
+                            anyServiceBuilt = true
                             echo "Building ${svc.name}..."
 
                             dir("${svc.name}") {
@@ -95,20 +89,26 @@ pipeline {
                                 sh """
                                     docker build -t ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION} .
                                     docker push ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION}
-
-                                    docker tag ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION} ${DOCKERHUB_USERNAME}/${svc.image}:latest
-                                    docker push ${DOCKERHUB_USERNAME}/${svc.image}:latest
                                 """
                             }
 
                             echo "Deploying ${svc.name}..."
 
                             sh """
+                                if [ ! -d "${DEPLOY_DIR}" ]; then
+                                    echo "Deployment directory not found!"
+                                    exit 1
+                                fi
+
                                 cd ${DEPLOY_DIR}
-                                docker compose pull ${svc.name}
-                                docker compose up -d ${svc.name}
+                                VERSION=${env.VERSION} docker compose pull ${svc.name}
+                                VERSION=${env.VERSION} docker compose up -d ${svc.name}
                             """
                         }
+                    }
+
+                    if (!anyServiceBuilt) {
+                        echo "No microservice changes detected. Skipping build."
                     }
                 }
             }
@@ -120,7 +120,7 @@ pipeline {
             sh 'docker logout || true'
         }
         success {
-            echo "Changed services built and deployed successfully 🚀"
+            echo "CI/CD completed successfully 🚀"
         }
         failure {
             echo "Pipeline failed ❌"
