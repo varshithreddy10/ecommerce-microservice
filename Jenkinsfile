@@ -83,7 +83,6 @@ pipeline {
                             echo "Building ${svc.name}..."
 
                             dir("${svc.name}") {
-
                                 sh 'mvn clean package -DskipTests'
 
                                 sh """
@@ -92,7 +91,7 @@ pipeline {
                                 """
                             }
 
-                            echo "Updating compose file & Deploying ${svc.name}..."
+                            echo "Deploying ${svc.name}..."
 
                             sh """
                                 if [ ! -d "${DEPLOY_DIR}" ]; then
@@ -102,11 +101,8 @@ pipeline {
 
                                 cd ${DEPLOY_DIR}
 
-                                # Replace only this service image tag
-                                sed -i "s|${DOCKERHUB_USERNAME}/${svc.image}:__VERSION__|${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION}|g" docker-compose.yml
-
-                                docker compose pull ${svc.name}
-                                docker compose up -d --no-deps --force-recreate ${svc.name}
+                                VERSION=${env.VERSION} docker compose pull ${svc.name}
+                                VERSION=${env.VERSION} docker compose up -d --no-deps --force-recreate ${svc.name}
                             """
                         }
                     }
