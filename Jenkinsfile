@@ -18,12 +18,16 @@ pipeline {
 
     stages {
 
+        /* ================= CHECKOUT ================= */
+
         stage('1️⃣ Checkout Code') {
             steps {
                 echo "📥 Checking out source code..."
                 checkout scm
             }
         }
+
+        /* ================= VERSION ================= */
 
         stage('2️⃣ Generate Version') {
             steps {
@@ -37,6 +41,8 @@ pipeline {
                 }
             }
         }
+
+        /* ================= DOCKER LOGIN ================= */
 
         stage('3️⃣ Docker Login') {
             steps {
@@ -53,48 +59,50 @@ pipeline {
             }
         }
 
+        /* ================= BUILD & DEPLOY ================= */
+
         stage('4️⃣ Build & Deploy') {
             steps {
                 script {
 
                     def services = [
-                        [name: "adminapi", image: "ecom-adminapi"],
-                        [name: "apigateway", image: "ecom-apigateway"],
-                        [name: "authuser", image: "ecom-authuserapi"],
-                        [name: "cartapi", image: "ecom-cartapi"],
-                        [name: "customerapi", image: "ecom-customerapi"],
-                        [name: "eurekaserver", image: "ecom-eurekaserver"],
-                        [name: "orderapi", image: "ecom-orderapi"],
-                        [name: "productapi", image: "ecom-productapi"]
+                        [name: "adminapi",      image: "ecom-adminapi"],
+                        [name: "apigateway",    image: "ecom-apigateway"],
+                        [name: "authuser",      image: "ecom-authuserapi"],
+                        [name: "cartapi",       image: "ecom-cartapi"],
+                        [name: "customerapi",   image: "ecom-customerapi"],
+                        [name: "eurekaserver",  image: "ecom-eurekaserver"],
+                        [name: "orderapi",      image: "ecom-orderapi"],
+                        [name: "productapi",    image: "ecom-productapi"]
                     ]
 
-                    def isFirstBuild = (currentBuild.number == 50)
+                    def isFirstBuild = (currentBuild.number == 51)
                     def changedServices = []
 
-                    /* ================= FIRST BUILD CLEAN ================= */
+                    /* ===== FIRST BUILD CLEANUP ===== */
 
                     if (isFirstBuild) {
 
-                        echo "🔥 FIRST BUILD DETECTED — Full cleanup & rebuild"
+                        echo "🔥 FIRST BUILD DETECTED — Full Clean & Rebuild"
 
                         sh """
-                            echo "🧹 Cleaning EC2 Docker completely..."
+                            echo "🧹 Cleaning Docker safely..."
 
-                            docker compose -f ${DEPLOY_DIR}/docker-compose.yml down -v || true
-                            docker rm -f \$(docker ps -aq) || true
-                            docker volume rm \$(docker volume ls -q) || true
-                            docker network prune -f || true
-                            docker image rm -f \$(docker images -aq) || true
-
-                            rm -rf ${DEPLOY_DIR}
                             mkdir -p ${DEPLOY_DIR}
+                            cd ${DEPLOY_DIR}
+
+                            docker compose down -v || true
+                            docker system prune -af --volumes || true
+
+                            echo "🗑 Removing old docker-compose.yml"
+                            rm -f docker-compose.yml || true
 
                             echo "⬇ Downloading fresh docker-compose.yml"
-                            curl -o ${DEPLOY_DIR}/docker-compose.yml ${COMPOSE_URL}
+                            curl -f -o docker-compose.yml ${COMPOSE_URL}
                         """
                     }
 
-                    /* ================= BUILD SERVICES ================= */
+                    /* ===== BUILD SERVICES ===== */
 
                     for (svc in services) {
 
@@ -108,8 +116,8 @@ pipeline {
 
                         if (serviceChanged || isFirstBuild) {
 
+                            echo "🏗 Building ${svc.name}..."
                             changedServices.add(svc.name)
-                            echo "🏗 Building ${svc.name}"
 
                             dir("${svc.name}") {
 
@@ -126,20 +134,21 @@ pipeline {
                         }
                     }
 
-                    /* ================= DEPLOY ================= */
+                    /* ===== DEPLOY ===== */
 
                     if (isFirstBuild) {
 
-                        echo "🚀 Starting FULL system"
+                        echo "🚀 Starting FULL system (latest tags only)"
 
                         sh """
                             cd ${DEPLOY_DIR}
+                            docker compose pull
                             docker compose up -d
                         """
 
                     } else if (changedServices.size() > 0) {
 
-                        echo "🔄 Updating changed services only"
+                        echo "🚀 Updating changed services only"
 
                         for (name in changedServices) {
                             sh """
@@ -148,16 +157,16 @@ pipeline {
                                 docker compose up -d --no-deps --force-recreate ${name}
                             """
                         }
-                    } else {
-                        echo "⚡ No changes detected"
-                    }
 
-                    echo "🧹 Cleaning unused images"
-                    sh "docker image prune -af || true"
+                    } else {
+                        echo "⚡ No microservice changes detected."
+                    }
                 }
             }
         }
     }
+
+    /* ================= POST ================= */
 
     post {
         always {
@@ -165,10 +174,10 @@ pipeline {
             sh 'docker logout || true'
         }
         success {
-            echo "🎉 CI/CD Completed Successfully!"
+            echo "✅ CI/CD Completed Successfully"
         }
         failure {
-            echo "❌ Pipeline Failed!"
+            echo "❌ Pipeline Failed"
         }
     }
 }
