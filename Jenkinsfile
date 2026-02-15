@@ -77,32 +77,33 @@ pipeline {
                             }
                         }
 
-                        if (serviceChanged || currentBuild.number == 33) {
+                        if (serviceChanged || currentBuild.changeSets.isEmpty()) {
 
                             anyServiceBuilt = true
                             echo "Building ${svc.name}..."
 
                             dir("${svc.name}") {
+
                                 sh 'mvn clean package -DskipTests'
 
                                 sh """
                                     docker build -t ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION} .
+                                    docker tag ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION} ${DOCKERHUB_USERNAME}/${svc.image}:latest
+
                                     docker push ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION}
+                                    docker push ${DOCKERHUB_USERNAME}/${svc.image}:latest
                                 """
                             }
 
                             echo "Deploying ${svc.name}..."
 
                             sh """
-                                if [ ! -d "${DEPLOY_DIR}" ]; then
-                                    echo "Deployment directory not found!"
-                                    exit 1
-                                fi
-
                                 cd ${DEPLOY_DIR}
 
-                                VERSION=${env.VERSION} docker compose pull ${svc.name}
-                                VERSION=${env.VERSION} docker compose up -d --no-deps --force-recreate ${svc.name}
+                                docker compose pull ${svc.name}
+                                docker compose up -d --no-deps --force-recreate --pull always ${svc.name}
+
+                                docker ps | grep ${svc.name}
                             """
                         }
                     }
