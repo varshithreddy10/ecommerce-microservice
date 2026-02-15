@@ -17,27 +17,31 @@ pipeline {
 
     stages {
 
-        stage('Checkout Code') {
+        stage('1️⃣ Checkout Code') {
             steps {
+                echo "📥 Checking out source code..."
                 checkout scm
             }
         }
 
-        stage('Generate Commit Version') {
+        stage('2️⃣ Generate Version') {
             steps {
                 script {
+                    echo "🔖 Generating Git commit hash version..."
                     env.VERSION = sh(
                         script: "git rev-parse --short HEAD",
                         returnStdout: true
                     ).trim()
 
-                    echo "Using Version: ${env.VERSION}"
+                    echo "✅ Using Version: ${env.VERSION}"
                 }
             }
         }
 
-        stage('Docker Login') {
+        stage('3️⃣ Docker Login') {
             steps {
+                echo "🔐 Logging into DockerHub..."
+
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKER_USER',
@@ -47,26 +51,32 @@ pipeline {
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                     '''
                 }
+
+                echo "✅ Docker login successful"
             }
         }
 
-        stage('Build & Deploy Services') {
+        stage('4️⃣ Build & Deploy') {
             steps {
                 script {
 
                     def services = [
-                        [name: "adminapi",      image: "ecom-adminapi"],
-                        [name: "apigateway",    image: "ecom-apigateway"],
-                        [name: "authuser",      image: "ecom-authuserapi"],
-                        [name: "cartapi",       image: "ecom-cartapi"],
-                        [name: "customerapi",   image: "ecom-customerapi"],
-                        [name: "eurekaserver",  image: "ecom-eurekaserver"],
-                        [name: "orderapi",      image: "ecom-orderapi"],
-                        [name: "productapi",    image: "ecom-productapi"]
+                        [name: "adminapi", image: "ecom-adminapi"],
+                        [name: "apigateway", image: "ecom-apigateway"],
+                        [name: "authuser", image: "ecom-authuserapi"],
+                        [name: "cartapi", image: "ecom-cartapi"],
+                        [name: "customerapi", image: "ecom-customerapi"],
+                        [name: "eurekaserver", image: "ecom-eurekaserver"],
+                        [name: "orderapi", image: "ecom-orderapi"],
+                        [name: "productapi", image: "ecom-productapi"]
                     ]
 
-                    def isFirstBuild = (currentBuild.number == 43)
-                    def anyServiceBuilt = false
+                    def isFirstBuild = (currentBuild.number == 47 || currentBuild.changeSets.isEmpty())
+                    def changedServices = []
+
+                    if (isFirstBuild) {
+                        echo "🔥 FIRST BUILD DETECTED — Full system deployment"
+                    }
 
                     for (svc in services) {
 
@@ -80,38 +90,57 @@ pipeline {
 
                         if (serviceChanged || isFirstBuild) {
 
-                            anyServiceBuilt = true
-                            echo "Building ${svc.name}..."
+                            echo "🏗 Building ${svc.name}..."
+                            changedServices.add(svc.name)
 
                             dir("${svc.name}") {
 
                                 sh 'mvn clean package -DskipTests'
 
+                                echo "🐳 Building Docker image for ${svc.name}"
                                 sh """
                                     docker build -t ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION} .
                                     docker tag ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION} ${DOCKERHUB_USERNAME}/${svc.image}:latest
+                                """
 
+                                echo "📤 Pushing images to DockerHub"
+                                sh """
                                     docker push ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION}
                                     docker push ${DOCKERHUB_USERNAME}/${svc.image}:latest
                                 """
                             }
-
-                            echo "Deploying ${svc.name}..."
-
-                            sh """
-                                cd ${DEPLOY_DIR}
-
-                                docker compose pull ${svc.name}
-                                docker compose up -d --no-deps --force-recreate --pull always ${svc.name}
-
-                                docker ps | grep ${svc.name}
-                            """
                         }
                     }
 
-                    if (!anyServiceBuilt) {
-                        echo "No microservice changes detected. Skipping build."
+                    if (isFirstBuild) {
+
+                        echo "🚀 Starting full microservices stack..."
+
+                        sh """
+                            mkdir -p ${DEPLOY_DIR}
+                            cd ${DEPLOY_DIR}
+                            docker compose down -v || true
+                            docker compose pull
+                            docker compose up -d
+                        """
+
+                    } else if (changedServices.size() > 0) {
+
+                        echo "🔄 Restarting only changed services..."
+
+                        for (name in changedServices) {
+                            sh """
+                                cd ${DEPLOY_DIR}
+                                docker compose pull ${name}
+                                docker compose up -d --no-deps --force-recreate ${name}
+                            """
+                        }
+                    } else {
+                        echo "⚡ No changes detected. Nothing to deploy."
                     }
+
+                    echo "🧹 Cleaning unused Docker images..."
+                    sh "docker image prune -af || true"
                 }
             }
         }
@@ -119,13 +148,16 @@ pipeline {
 
     post {
         always {
+            echo "🚪 Logging out from DockerHub..."
             sh 'docker logout || true'
         }
+
         success {
-            echo "CI/CD completed successfully 🚀"
+            echo "🎉 CI/CD Pipeline Completed Successfully!"
         }
+
         failure {
-            echo "Pipeline failed ❌"
+            echo "❌ Pipeline Failed!"
         }
     }
 }
