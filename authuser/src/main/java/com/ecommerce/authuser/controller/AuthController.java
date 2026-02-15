@@ -55,7 +55,7 @@ public class AuthController
     @GetMapping("/test")
     public ResponseEntity<String> test()
     {
-        String message = "melanie hicks, dani danials, bunny colby, bunny madison";
+        String message = "melanie hicks, dani danials, bunny colby, bunny madison, natalie gibson";
 
         return new ResponseEntity<>(message , HttpStatus.OK);
     }
