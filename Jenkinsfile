@@ -65,7 +65,7 @@ pipeline {
                         [name: "productapi",    image: "ecom-productapi"]
                     ]
 
-                    def isFirstBuild = (currentBuild.number == 37)
+                    def isFirstBuild = (currentBuild.number == 43)
                     def anyServiceBuilt = false
 
                     for (svc in services) {
