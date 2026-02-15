@@ -39,6 +39,8 @@ services:
   authuser:
     image: varshithreddy144/ecom-authuserapi:latest
     container_name: authuser
+    ports:
+      - "9090:5000"
     depends_on:
       - eurekaserver
       - security-db
