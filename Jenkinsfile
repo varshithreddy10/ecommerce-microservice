@@ -13,6 +13,7 @@ pipeline {
     environment {
         DOCKERHUB_USERNAME = "varshithreddy144"
         DEPLOY_DIR = "/opt/ecommerce-project"
+        COMPOSE_URL = "https://raw.githubusercontent.com/varshithreddy10/ecommerce-microservice/main/docker-compose.yml"
     }
 
     stages {
@@ -27,13 +28,12 @@ pipeline {
         stage('2️⃣ Generate Version') {
             steps {
                 script {
-                    echo "🔖 Generating Git commit hash version..."
                     env.VERSION = sh(
                         script: "git rev-parse --short HEAD",
                         returnStdout: true
                     ).trim()
 
-                    echo "✅ Using Version: ${env.VERSION}"
+                    echo "🔖 Version: ${env.VERSION}"
                 }
             }
         }
@@ -41,7 +41,6 @@ pipeline {
         stage('3️⃣ Docker Login') {
             steps {
                 echo "🔐 Logging into DockerHub..."
-
                 withCredentials([usernamePassword(
                     credentialsId: 'dockerhub-creds',
                     usernameVariable: 'DOCKER_USER',
@@ -51,8 +50,6 @@ pipeline {
                         echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                     '''
                 }
-
-                echo "✅ Docker login successful"
             }
         }
 
@@ -71,12 +68,33 @@ pipeline {
                         [name: "productapi", image: "ecom-productapi"]
                     ]
 
-                    def isFirstBuild = (currentBuild.number == 47 || currentBuild.changeSets.isEmpty())
+                    def isFirstBuild = (currentBuild.number == 50)
                     def changedServices = []
 
+                    /* ================= FIRST BUILD CLEAN ================= */
+
                     if (isFirstBuild) {
-                        echo "🔥 FIRST BUILD DETECTED — Full system deployment"
+
+                        echo "🔥 FIRST BUILD DETECTED — Full cleanup & rebuild"
+
+                        sh """
+                            echo "🧹 Cleaning EC2 Docker completely..."
+
+                            docker compose -f ${DEPLOY_DIR}/docker-compose.yml down -v || true
+                            docker rm -f \$(docker ps -aq) || true
+                            docker volume rm \$(docker volume ls -q) || true
+                            docker network prune -f || true
+                            docker image rm -f \$(docker images -aq) || true
+
+                            rm -rf ${DEPLOY_DIR}
+                            mkdir -p ${DEPLOY_DIR}
+
+                            echo "⬇ Downloading fresh docker-compose.yml"
+                            curl -o ${DEPLOY_DIR}/docker-compose.yml ${COMPOSE_URL}
+                        """
                     }
+
+                    /* ================= BUILD SERVICES ================= */
 
                     for (svc in services) {
 
@@ -90,21 +108,17 @@ pipeline {
 
                         if (serviceChanged || isFirstBuild) {
 
-                            echo "🏗 Building ${svc.name}..."
                             changedServices.add(svc.name)
+                            echo "🏗 Building ${svc.name}"
 
                             dir("${svc.name}") {
 
                                 sh 'mvn clean package -DskipTests'
 
-                                echo "🐳 Building Docker image for ${svc.name}"
                                 sh """
                                     docker build -t ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION} .
                                     docker tag ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION} ${DOCKERHUB_USERNAME}/${svc.image}:latest
-                                """
 
-                                echo "📤 Pushing images to DockerHub"
-                                sh """
                                     docker push ${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION}
                                     docker push ${DOCKERHUB_USERNAME}/${svc.image}:latest
                                 """
@@ -112,21 +126,20 @@ pipeline {
                         }
                     }
 
+                    /* ================= DEPLOY ================= */
+
                     if (isFirstBuild) {
 
-                        echo "🚀 Starting full microservices stack..."
+                        echo "🚀 Starting FULL system"
 
                         sh """
-                            mkdir -p ${DEPLOY_DIR}
                             cd ${DEPLOY_DIR}
-                            docker compose down -v || true
-                            docker compose pull
                             docker compose up -d
                         """
 
                     } else if (changedServices.size() > 0) {
 
-                        echo "🔄 Restarting only changed services..."
+                        echo "🔄 Updating changed services only"
 
                         for (name in changedServices) {
                             sh """
@@ -136,10 +149,10 @@ pipeline {
                             """
                         }
                     } else {
-                        echo "⚡ No changes detected. Nothing to deploy."
+                        echo "⚡ No changes detected"
                     }
 
-                    echo "🧹 Cleaning unused Docker images..."
+                    echo "🧹 Cleaning unused images"
                     sh "docker image prune -af || true"
                 }
             }
@@ -148,14 +161,12 @@ pipeline {
 
     post {
         always {
-            echo "🚪 Logging out from DockerHub..."
+            echo "🚪 Docker logout"
             sh 'docker logout || true'
         }
-
         success {
-            echo "🎉 CI/CD Pipeline Completed Successfully!"
+            echo "🎉 CI/CD Completed Successfully!"
         }
-
         failure {
             echo "❌ Pipeline Failed!"
         }
