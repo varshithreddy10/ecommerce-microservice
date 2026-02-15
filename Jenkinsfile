@@ -92,7 +92,7 @@ pipeline {
                                 """
                             }
 
-                            echo "Deploying ${svc.name}..."
+                            echo "Updating compose file & Deploying ${svc.name}..."
 
                             sh """
                                 if [ ! -d "${DEPLOY_DIR}" ]; then
@@ -101,8 +101,12 @@ pipeline {
                                 fi
 
                                 cd ${DEPLOY_DIR}
-                                VERSION=${env.VERSION} docker compose pull ${svc.name}
-                                VERSION=${env.VERSION} docker compose up -d ${svc.name}
+
+                                # Replace only this service image tag
+                                sed -i "s|${DOCKERHUB_USERNAME}/${svc.image}:__VERSION__|${DOCKERHUB_USERNAME}/${svc.image}:${env.VERSION}|g" docker-compose.yml
+
+                                docker compose pull ${svc.name}
+                                docker compose up -d --no-deps --force-recreate ${svc.name}
                             """
                         }
                     }
