@@ -25,71 +25,76 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         this.jwtService = jwtService;
     }
 
-    @Override
-    public GatewayFilter apply(Config config)
-    {
-        log.info("PORTMAN control entered the AuthenticationFilter ");
-        return (exchange, chain) -> {
+   @Override
+public GatewayFilter apply(Config config)
+{
+    log.info("PORTMAN control entered the AuthenticationFilter ");
 
-            String authHeader = exchange.getRequest().getHeaders().getFirst("Authorization");
+    return (exchange, chain) -> {
 
-            log.info("NATALIE jwttoken is = "+authHeader);
+        String path = exchange.getRequest().getURI().getPath();
+        log.info("Incoming request path: " + path);
 
-            if (authHeader == null || !authHeader.startsWith("Bearer "))
-            {
+        // =====================================================
+        // ✅ 1️⃣ ALLOW SWAGGER & AUTH WITHOUT JWT
+        // =====================================================
+        if (path.contains("/v3/api-docs") ||
+            path.contains("/swagger-ui") ||
+            path.contains("/swagger-ui.html") ||
+            path.contains("/webjars") ||
+            path.contains("/api/auth")) {
 
-                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                log.info("NATALIE control entered the if-else and the message is "+exchange.getResponse().setComplete());
-                return exchange.getResponse().setComplete();
-            }
+            log.info("Swagger/Auth endpoint detected. Skipping JWT validation.");
+            return chain.filter(exchange);
+        }
 
-            String token = authHeader.substring(7);
+        // =====================================================
+        // 🔐 2️⃣ CHECK JWT FOR ALL OTHER REQUESTS
+        // =====================================================
+        String authHeader = exchange.getRequest().getHeaders().getFirst("Authorization");
 
-            try
-            {
-                Claims claims = jwtService.validateAndGetClaims(token);
-                log.info("NATALIE claims are  = "+claims);
+        log.info("JWT token = " + authHeader);
 
-                String userId = claims.getSubject();
-                log.info("NATALIE userId is  = "+userId);
+        if (authHeader == null || !authHeader.startsWith("Bearer "))
+        {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
 
-                String email = claims.get("email",String.class);
-                log.info("NATALIE email = "+email);
+        String token = authHeader.substring(7);
 
+        try
+        {
+            Claims claims = jwtService.validateAndGetClaims(token);
 
-                List<String> rolesSet = claims.get("rolesset", List.class);
-                log.info("NATALIE rolesset are  = "+rolesSet);
+            String userId = claims.getSubject();
+            String email = claims.get("email", String.class);
 
-                List<String> rolesString = claims.get("rolesstring", List.class);
-                log.info("NATALIE rolesString are  = "+rolesString);
+            List<String> rolesSet = claims.get("rolesset", List.class);
+            List<String> rolesString = claims.get("rolesstring", List.class);
+            List<String> authoritiesOfUser = claims.get("authorities", List.class);
 
-                List<String> athoritiesOfUser = claims.get("authorities", List.class);
-                log.info("NATALIE athoritiesOfUser are  = "+athoritiesOfUser);
+            ServerWebExchange modifiedExchange =
+                    exchange.mutate()
+                            .request(req -> req
+                                    .header("X-User-Id", userId)
+                                    .header("X-User-RoleSet", String.join(",", rolesSet))
+                                    .header("X-User-Roles", String.join(",", rolesString))
+                                    .header("X-User-Authorities", String.join(",", authoritiesOfUser))
+                            )
+                            .build();
 
-                ServerWebExchange modifiedExchange =
-                        exchange.mutate()
-                                .request(req -> req
-                                        .header("X-User-Id", userId)
-                                        .header("X-User-RoleSet",String.join(",",rolesSet))
-                                        .header("X-User-Roles", String.join(",", rolesString))
-                                        .header("X-User-Authorities", String.join(",", athoritiesOfUser))
-                                )
-                                .build();
-                log.info("NATALIE ServerWebExchange modifiedExchange = "+modifiedExchange);
+            return chain.filter(modifiedExchange);
 
-                return chain.filter(modifiedExchange);
+        }
+        catch (Exception e)
+        {
+            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+            return exchange.getResponse().setComplete();
+        }
+    };
+}
 
-            }
-            catch (Exception e)
-            {
-                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-                log.error("exception occured and the  1 error is "+e.getMessage());
-                log.error("exception occured and the  2 error is "); //+exchange.getResponse().setComplete()
-
-                return exchange.getResponse().setComplete();
-            }
-        };
-    }
 
     public static class Config
     {
