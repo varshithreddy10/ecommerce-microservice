@@ -6,13 +6,17 @@ spring:
     gateway:
       routes:
 
-        # ================= AUTH SERVICE =================
+        # =====================================================
+        # ================= BUSINESS ROUTES ===================
+        # =====================================================
+
+        # ---------- AUTH SERVICE (Public Login/Register) ----------
         - id: auth-service
           uri: lb://AUTHUSER
           predicates:
             - Path=/api/auth/**
 
-        # ================= ORDER SERVICE =================
+        # ---------- ORDER SERVICE ----------
         - id: order-service
           uri: lb://ORDERAPI
           predicates:
@@ -20,7 +24,7 @@ spring:
           filters:
             - AuthenticationFilter
 
-        # ================= CUSTOMER SERVICE =================
+        # ---------- CUSTOMER SERVICE ----------
         - id: customer-service
           uri: lb://CUSTOMERAPI
           predicates:
@@ -35,7 +39,7 @@ spring:
           filters:
             - AuthenticationFilter
 
-        # ================= CART SERVICE =================
+        # ---------- CART SERVICE ----------
         - id: cart-service
           uri: lb://CARTAPI
           predicates:
@@ -43,7 +47,7 @@ spring:
           filters:
             - AuthenticationFilter
 
-        # ================= PRODUCT SERVICE =================
+        # ---------- PRODUCT SERVICE ----------
         - id: product-service
           uri: lb://PRODUCTAPI
           predicates:
@@ -51,7 +55,7 @@ spring:
           filters:
             - AuthenticationFilter
 
-        # ================= ADMIN SERVICE =================
+        # ---------- ADMIN SERVICE ----------
         - id: admin-service
           uri: lb://ADMINAPI
           predicates:
@@ -59,46 +63,67 @@ spring:
           filters:
             - AuthenticationFilter
 
-        # ====================================================
-        # ============== SWAGGER DOC ROUTES ==================
-        # ====================================================
 
+        # =====================================================
+        # ================= SWAGGER DOC ROUTES =================
+        # =====================================================
+
+        # AUTH SERVICE DOCS
         - id: auth-docs
           uri: lb://AUTHUSER
           predicates:
             - Path=/auth/v3/api-docs
+          filters:
+            - RewritePath=/auth/(?<segment>.*), /${segment}
 
+        # ORDER SERVICE DOCS
         - id: order-docs
           uri: lb://ORDERAPI
           predicates:
             - Path=/orders/v3/api-docs
+          filters:
+            - RewritePath=/orders/(?<segment>.*), /${segment}
 
+        # CUSTOMER SERVICE DOCS
         - id: customer-docs
           uri: lb://CUSTOMERAPI
           predicates:
             - Path=/customer/v3/api-docs
+          filters:
+            - RewritePath=/customer/(?<segment>.*), /${segment}
 
+        # CART SERVICE DOCS
         - id: cart-docs
           uri: lb://CARTAPI
           predicates:
             - Path=/carts/v3/api-docs
+          filters:
+            - RewritePath=/carts/(?<segment>.*), /${segment}
 
+        # PRODUCT SERVICE DOCS
         - id: product-docs
           uri: lb://PRODUCTAPI
           predicates:
             - Path=/products/v3/api-docs
+          filters:
+            - RewritePath=/products/(?<segment>.*), /${segment}
 
 server:
   port: 8080
+
+# =====================================================
+# ================= EUREKA CONFIG =====================
+# =====================================================
 
 eureka:
   client:
     service-url:
       defaultZone: http://eurekaserver:8761/eureka
 
-# ==========================================================
-# ================= SWAGGER AGGREGATION ====================
-# ==========================================================
+
+# =====================================================
+# ============== SWAGGER AGGREGATION ==================
+# =====================================================
 
 springdoc:
   swagger-ui:
