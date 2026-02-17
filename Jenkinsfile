@@ -76,7 +76,7 @@ pipeline {
                         [name: "productapi",    image: "ecom-productapi"]
                     ]
 
-                    def isFirstBuild = (currentBuild.number == 86)
+                    def isFirstBuild = (currentBuild.number == 93)
                     def changedServices = []
 
                     /* ===== FIRST BUILD CLEANUP ===== */
