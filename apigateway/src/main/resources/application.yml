@@ -94,7 +94,7 @@ spring:
                 - RewritePath=/products/(?<segment>.*), /${segment}
 
              - id: admin-docs
-              uri: lb://ADMINAPI
+              uri: lb://adminapi
               predicates:
                 - Path=/admin/v3/api-docs
               filters:
