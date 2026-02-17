@@ -31,16 +31,29 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         log.info("PORTMAN control entered the AuthenticationFilter ");
         return (exchange, chain) -> {
 
+            // String path = exchange.getRequest().getURI().getPath();
+
+            // if (path.contains("/v3/api-docs") ||
+            //     path.contains("/swagger-ui") ||
+            //     path.contains("/swagger-ui.html") ||
+            //     path.contains("/webjars") ||
+            //     path.contains("/api/auth")) {
+            
+            //     return chain.filter(exchange);
+            // }
+
             String path = exchange.getRequest().getURI().getPath();
 
-            if (path.contains("/v3/api-docs") ||
-                path.contains("/swagger-ui") ||
-                path.contains("/swagger-ui.html") ||
-                path.contains("/webjars") ||
-                path.contains("/api/auth")) {
+            if (path.startsWith("/v3/api-docs") ||
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/webjars") ||
+                path.startsWith("/swagger-ui.html") ||
+                path.startsWith("/swagger-ui/") ||
+                path.startsWith("/api/auth")) {
             
                 return chain.filter(exchange);
             }
+
 
             
 
