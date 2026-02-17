@@ -31,14 +31,7 @@ public class AuthenticationFilter extends AbstractGatewayFilterFactory<Authentic
         log.info("PORTMAN control entered the AuthenticationFilter ");
         return (exchange, chain) -> {
 
-            if (path.contains("/v3/api-docs") ||
-                path.contains("/swagger-ui") ||
-                path.contains("/swagger-ui.html") ||
-                path.contains("/webjars") ||
-                path.contains("/api/auth")) {
             
-                return chain.filter(exchange);
-            }
 
 
             String authHeader = exchange.getRequest().getHeaders().getFirst("Authorization");
