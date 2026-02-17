@@ -49,7 +49,7 @@ spring:
                 - name: AuthenticationFilter
 
             - id: admin-service
-              uri: lb://adminapi
+              uri: lb://ADMINAPI
               predicates:
                 - Path=/api/admin/**
               filters:
@@ -93,20 +93,12 @@ spring:
               filters:
                 - RewritePath=/products/(?<segment>.*), /${segment}
 
-           - id: admin-docs
-             uri: lb://ADMINAPI
-             predicates:
+            - id: admin-docs
+              uri: lb://ADMINAPI
+              predicates:
                 - Path=/admin/v3/api-docs
-             filters:
+              filters:
                 - RewritePath=/admin/(?<segment>.*), /${segment}
-
-
-             # - id: admin-docs
-             #  uri: lb://adminapi
-             #  predicates:
-             #    - Path=/admin/v3/api-docs
-             #  filters:
-             #    - RewritePath=/admin/(?<segment>.*), /${segment}
 
 
 server:
@@ -117,8 +109,6 @@ eureka:
     service-url:
       defaultZone: http://eurekaserver:8761/eureka
 
-
-# ================= SWAGGER AGGREGATION =================
 
 springdoc:
   swagger-ui:
@@ -136,6 +126,3 @@ springdoc:
         url: /products/v3/api-docs
       - name: Admin Service
         url: /admin/v3/api-docs
-
-      # - name: Admin Service
-      #   url: /admin/v3/api-docs
