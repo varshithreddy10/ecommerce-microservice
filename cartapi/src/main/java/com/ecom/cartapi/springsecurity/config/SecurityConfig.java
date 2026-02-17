@@ -20,10 +20,11 @@ public class SecurityConfig
     public SecurityFilterChain securityFilterChain(HttpSecurity http, GatewayAuthenticationFilter gatewayAuthenticationFilter) throws Exception
     {
         log.info("NATALIE control entered securityFilterChain ");
+        
             http.csrf(csrf -> csrf.disable())
-                .sessionManagement(sm ->
-                                           sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS) )
-                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .sessionManagement(sm ->sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS) )
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .anyRequest().authenticated()
                 .addFilterBefore(gatewayAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
             return http.build();
