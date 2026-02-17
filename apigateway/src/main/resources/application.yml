@@ -126,3 +126,8 @@ springdoc:
         url: /products/v3/api-docs
       - name: Admin Service
         url: /admin/v3/api-docs
+
+ api-docs:
+    servers:
+      - url: http://15.206.241.176:8081
+        description: API Gateway
