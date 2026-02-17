@@ -1,6 +1,3 @@
-
-
-
 spring:
   application:
     name: apigateway
@@ -23,14 +20,12 @@ spring:
               filters:
                 - name: AuthenticationFilter
 
-
             - id: customer-service
               uri: lb://customerapi
               predicates:
                 - Path=/api/customer/**
               filters:
                 - name: AuthenticationFilter
-
 
             - id: address-service
               uri: lb://customerapi
@@ -39,14 +34,12 @@ spring:
               filters:
                 - name: AuthenticationFilter
 
-
             - id: cart-service
               uri: lb://cartapi
               predicates:
                 - Path=/api/carts/**
               filters:
                 - name: AuthenticationFilter
-
 
             - id: product-service
               uri: lb://PRODUCTAPI
@@ -55,13 +48,51 @@ spring:
               filters:
                 - name: AuthenticationFilter
 
-
             - id: admin-service
               uri: lb://adminapi
               predicates:
                 - Path=/api/admin/**
               filters:
                 - name: AuthenticationFilter
+
+
+            # ================= SWAGGER DOC ROUTES =================
+
+            - id: auth-docs
+              uri: lb://AUTHUSER
+              predicates:
+                - Path=/auth/v3/api-docs
+              filters:
+                - RewritePath=/auth/(?<segment>.*), /${segment}
+
+            - id: order-docs
+              uri: lb://orderapi
+              predicates:
+                - Path=/orders/v3/api-docs
+              filters:
+                - RewritePath=/orders/(?<segment>.*), /${segment}
+
+            - id: customer-docs
+              uri: lb://customerapi
+              predicates:
+                - Path=/customer/v3/api-docs
+              filters:
+                - RewritePath=/customer/(?<segment>.*), /${segment}
+
+            - id: cart-docs
+              uri: lb://cartapi
+              predicates:
+                - Path=/carts/v3/api-docs
+              filters:
+                - RewritePath=/carts/(?<segment>.*), /${segment}
+
+            - id: product-docs
+              uri: lb://PRODUCTAPI
+              predicates:
+                - Path=/products/v3/api-docs
+              filters:
+                - RewritePath=/products/(?<segment>.*), /${segment}
+
 
 server:
   port: 8080
@@ -72,3 +103,19 @@ eureka:
       defaultZone: http://eurekaserver:8761/eureka
 
 
+# ================= SWAGGER AGGREGATION =================
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Auth Service
+        url: /auth/v3/api-docs
+      - name: Order Service
+        url: /orders/v3/api-docs
+      - name: Customer Service
+        url: /customer/v3/api-docs
+      - name: Cart Service
+        url: /carts/v3/api-docs
+      - name: Product Service
+        url: /products/v3/api-docs
