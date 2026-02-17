@@ -93,6 +93,14 @@ spring:
               filters:
                 - RewritePath=/products/(?<segment>.*), /${segment}
 
+           - id: admin-docs
+             uri: lb://ADMINAPI
+             predicates:
+                - Path=/admin/v3/api-docs
+             filters:
+                - RewritePath=/admin/(?<segment>.*), /${segment}
+
+
              # - id: admin-docs
              #  uri: lb://adminapi
              #  predicates:
@@ -126,5 +134,8 @@ springdoc:
         url: /carts/v3/api-docs
       - name: Product Service
         url: /products/v3/api-docs
+      - name: Admin Service
+        url: /admin/v3/api-docs
+
       # - name: Admin Service
       #   url: /admin/v3/api-docs
