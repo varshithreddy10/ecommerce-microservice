@@ -14,28 +14,28 @@ spring:
                 - Path=/api/auth/**
 
             - id: order-service
-              uri: lb://orderapi
+              uri: lb://ORDERAPI
               predicates:
                 - Path=/api/orders/**
               filters:
                 - name: AuthenticationFilter
 
             - id: customer-service
-              uri: lb://customerapi
+              uri: lb://CUSTOMERAPI
               predicates:
                 - Path=/api/customer/**
               filters:
                 - name: AuthenticationFilter
 
             - id: address-service
-              uri: lb://customerapi
+              uri: lb://CUSTOMERAPI
               predicates:
                 - Path=/api/address/**
               filters:
                 - name: AuthenticationFilter
 
             - id: cart-service
-              uri: lb://cartapi
+              uri: lb://CARTAPI
               predicates:
                 - Path=/api/carts/**
               filters:
@@ -66,21 +66,21 @@ spring:
                 - RewritePath=/auth/(?<segment>.*), /${segment}
 
             - id: order-docs
-              uri: lb://orderapi
+              uri: lb://ORDERAPI
               predicates:
                 - Path=/orders/v3/api-docs
               filters:
                 - RewritePath=/orders/(?<segment>.*), /${segment}
 
             - id: customer-docs
-              uri: lb://customerapi
+              uri: lb://CUSTOMERAPI
               predicates:
                 - Path=/customer/v3/api-docs
               filters:
                 - RewritePath=/customer/(?<segment>.*), /${segment}
 
             - id: cart-docs
-              uri: lb://cartapi
+              uri: lb://CARTAPI
               predicates:
                 - Path=/carts/v3/api-docs
               filters:
@@ -103,6 +103,8 @@ spring:
 
 server:
   port: 8080
+  forward-headers-strategy: framework
+
 
 eureka:
   client:
@@ -126,8 +128,3 @@ springdoc:
         url: /products/v3/api-docs
       - name: Admin Service
         url: /admin/v3/api-docs
-
- api-docs:
-    servers:
-      - url: http://15.206.241.176:8081
-        description: API Gateway
