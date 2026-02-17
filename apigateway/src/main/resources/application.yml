@@ -4,91 +4,94 @@ spring:
 
   cloud:
     gateway:
-      routes:
+      server:
+        webflux:
+          routes:
 
-        - id: auth-service
-          uri: lb://AUTHUSER
-          predicates:
-            - Path=/api/auth/**
+            - id: auth-service
+              uri: lb://AUTHUSER
+              predicates:
+                - Path=/api/auth/**
 
-        - id: order-service
-          uri: lb://orderapi
-          predicates:
-            - Path=/api/orders/**
-          filters:
-            - AuthenticationFilter
+            - id: order-service
+              uri: lb://orderapi
+              predicates:
+                - Path=/api/orders/**
+              filters:
+                - name: AuthenticationFilter
 
-        - id: customer-service
-          uri: lb://customerapi
-          predicates:
-            - Path=/api/customer/**
-          filters:
-            - AuthenticationFilter
+            - id: customer-service
+              uri: lb://customerapi
+              predicates:
+                - Path=/api/customer/**
+              filters:
+                - name: AuthenticationFilter
 
-        - id: address-service
-          uri: lb://customerapi
-          predicates:
-            - Path=/api/address/**
-          filters:
-            - AuthenticationFilter
+            - id: address-service
+              uri: lb://customerapi
+              predicates:
+                - Path=/api/address/**
+              filters:
+                - name: AuthenticationFilter
 
-        - id: cart-service
-          uri: lb://cartapi
-          predicates:
-            - Path=/api/carts/**
-          filters:
-            - AuthenticationFilter
+            - id: cart-service
+              uri: lb://cartapi
+              predicates:
+                - Path=/api/carts/**
+              filters:
+                - name: AuthenticationFilter
 
-        - id: product-service
-          uri: lb://PRODUCTAPI
-          predicates:
-            - Path=/api/products/**
-          filters:
-            - AuthenticationFilter
+            - id: product-service
+              uri: lb://PRODUCTAPI
+              predicates:
+                - Path=/api/products/**
+              filters:
+                - name: AuthenticationFilter
 
-        - id: admin-service
-          uri: lb://adminapi
-          predicates:
-            - Path=/api/admin/**
-          filters:
-            - AuthenticationFilter
+            - id: admin-service
+              uri: lb://adminapi
+              predicates:
+                - Path=/api/admin/**
+              filters:
+                - name: AuthenticationFilter
 
-        # ================= SWAGGER DOC ROUTES =================
 
-        - id: auth-docs
-          uri: lb://AUTHUSER
-          predicates:
-            - Path=/auth/v3/api-docs
-          filters:
-            - RewritePath=/auth/(?<segment>.*), /${segment}
+            # ================= SWAGGER DOC ROUTES =================
 
-        - id: order-docs
-          uri: lb://orderapi
-          predicates:
-            - Path=/orders/v3/api-docs
-          filters:
-            - RewritePath=/orders/(?<segment>.*), /${segment}
+            - id: auth-docs
+              uri: lb://AUTHUSER
+              predicates:
+                - Path=/auth/v3/api-docs
+              filters:
+                - RewritePath=/auth/(?<segment>.*), /${segment}
 
-        - id: customer-docs
-          uri: lb://customerapi
-          predicates:
-            - Path=/customer/v3/api-docs
-          filters:
-            - RewritePath=/customer/(?<segment>.*), /${segment}
+            - id: order-docs
+              uri: lb://orderapi
+              predicates:
+                - Path=/orders/v3/api-docs
+              filters:
+                - RewritePath=/orders/(?<segment>.*), /${segment}
 
-        - id: cart-docs
-          uri: lb://cartapi
-          predicates:
-            - Path=/carts/v3/api-docs
-          filters:
-            - RewritePath=/carts/(?<segment>.*), /${segment}
+            - id: customer-docs
+              uri: lb://customerapi
+              predicates:
+                - Path=/customer/v3/api-docs
+              filters:
+                - RewritePath=/customer/(?<segment>.*), /${segment}
 
-        - id: product-docs
-          uri: lb://PRODUCTAPI
-          predicates:
-            - Path=/products/v3/api-docs
-          filters:
-            - RewritePath=/products/(?<segment>.*), /${segment}
+            - id: cart-docs
+              uri: lb://cartapi
+              predicates:
+                - Path=/carts/v3/api-docs
+              filters:
+                - RewritePath=/carts/(?<segment>.*), /${segment}
+
+            - id: product-docs
+              uri: lb://PRODUCTAPI
+              predicates:
+                - Path=/products/v3/api-docs
+              filters:
+                - RewritePath=/products/(?<segment>.*), /${segment}
 
 
 server:
@@ -99,6 +102,8 @@ eureka:
     service-url:
       defaultZone: http://eurekaserver:8761/eureka
 
+
+# ================= SWAGGER AGGREGATION =================
 
 springdoc:
   swagger-ui:
