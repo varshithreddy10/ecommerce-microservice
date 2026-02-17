@@ -42,7 +42,7 @@ spring:
                 - name: AuthenticationFilter
 
             - id: product-service
-              uri: lb://PRODUCTAPI
+              uri: lb://API
               predicates:
                 - Path=/api/products/**
               filters:
@@ -87,7 +87,7 @@ spring:
                 - RewritePath=/carts/(?<segment>.*), /${segment}
 
             - id: product-docs
-              uri: lb://PRODUCTAPI
+              uri: lb://API
               predicates:
                 - Path=/products/v3/api-docs
               filters:
