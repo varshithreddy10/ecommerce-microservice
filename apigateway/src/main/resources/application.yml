@@ -1,67 +1,92 @@
-
-
-
 spring:
   application:
-    name: apigateway
+    name: API-GATEWAY
 
   cloud:
     gateway:
-      server:
-        webflux:
-          routes:
+      routes:
 
-            - id: auth-service
-              uri: lb://AUTHUSER
-              predicates:
-                - Path=/api/auth/**
+        # ================= AUTH SERVICE =================
+        - id: auth-service
+          uri: lb://AUTHUSER
+          predicates:
+            - Path=/api/auth/**
 
-            - id: order-service
-              uri: lb://orderapi
-              predicates:
-                - Path=/api/orders/**
-              filters:
-                - name: AuthenticationFilter
+        # ================= ORDER SERVICE =================
+        - id: order-service
+          uri: lb://ORDERAPI
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - AuthenticationFilter
 
+        # ================= CUSTOMER SERVICE =================
+        - id: customer-service
+          uri: lb://CUSTOMERAPI
+          predicates:
+            - Path=/api/customer/**
+          filters:
+            - AuthenticationFilter
 
-            - id: customer-service
-              uri: lb://customerapi
-              predicates:
-                - Path=/api/customer/**
-              filters:
-                - name: AuthenticationFilter
+        - id: address-service
+          uri: lb://CUSTOMERAPI
+          predicates:
+            - Path=/api/address/**
+          filters:
+            - AuthenticationFilter
 
+        # ================= CART SERVICE =================
+        - id: cart-service
+          uri: lb://CARTAPI
+          predicates:
+            - Path=/api/carts/**
+          filters:
+            - AuthenticationFilter
 
-            - id: address-service
-              uri: lb://customerapi
-              predicates:
-                - Path=/api/address/**
-              filters:
-                - name: AuthenticationFilter
+        # ================= PRODUCT SERVICE =================
+        - id: product-service
+          uri: lb://PRODUCTAPI
+          predicates:
+            - Path=/api/products/**
+          filters:
+            - AuthenticationFilter
 
+        # ================= ADMIN SERVICE =================
+        - id: admin-service
+          uri: lb://ADMINAPI
+          predicates:
+            - Path=/api/admin/**
+          filters:
+            - AuthenticationFilter
 
-            - id: cart-service
-              uri: lb://cartapi
-              predicates:
-                - Path=/api/carts/**
-              filters:
-                - name: AuthenticationFilter
+        # ====================================================
+        # ============== SWAGGER DOC ROUTES ==================
+        # ====================================================
 
+        - id: auth-docs
+          uri: lb://AUTHUSER
+          predicates:
+            - Path=/auth/v3/api-docs
 
-            - id: product-service
-              uri: lb://PRODUCTAPI
-              predicates:
-                - Path=/api/products/**
-              filters:
-                - name: AuthenticationFilter
+        - id: order-docs
+          uri: lb://ORDERAPI
+          predicates:
+            - Path=/orders/v3/api-docs
 
+        - id: customer-docs
+          uri: lb://CUSTOMERAPI
+          predicates:
+            - Path=/customer/v3/api-docs
 
-            - id: admin-service
-              uri: lb://adminapi
-              predicates:
-                - Path=/api/admin/**
-              filters:
-                - name: AuthenticationFilter
+        - id: cart-docs
+          uri: lb://CARTAPI
+          predicates:
+            - Path=/carts/v3/api-docs
+
+        - id: product-docs
+          uri: lb://PRODUCTAPI
+          predicates:
+            - Path=/products/v3/api-docs
 
 server:
   port: 8080
@@ -71,4 +96,21 @@ eureka:
     service-url:
       defaultZone: http://eurekaserver:8761/eureka
 
+# ==========================================================
+# ================= SWAGGER AGGREGATION ====================
+# ==========================================================
 
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: Auth Service
+        url: /auth/v3/api-docs
+      - name: Order Service
+        url: /orders/v3/api-docs
+      - name: Customer Service
+        url: /customer/v3/api-docs
+      - name: Cart Service
+        url: /carts/v3/api-docs
+      - name: Product Service
+        url: /products/v3/api-docs
